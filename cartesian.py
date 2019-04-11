@@ -13,17 +13,28 @@ __version__ = "0.0.0"
 EMPTY_STRING = ""
 LINE_SEP = '\n'
 
-def get_stdin(waitable):
-    if waitable or sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-        return sys.stdin.readlines()
+def get_readline():
+    while True:
+        line = sys.stdin.readline()
+        if line:
+            yield line
+        else:
+            break
 
+def get_readlines():
+    return sys.stdin.readlines()
+            
 def line_strip(lines,sep):
     for line in lines:
         yield line.rstrip(sep)
 
-def generate(*paths,all=False,waitable=False,reverse=False,sep=EMPTY_STRING,line_sep=LINE_SEP):
+def generate(*paths,big=False,all=False,waitable=False,reverse=False,sep=EMPTY_STRING,line_sep=LINE_SEP):
+    if waitable or sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+        if big:
+            stdin_lines = get_readline()
+        else:
+            stdin_lines = get_readlines()
     with contextlib.ExitStack() as stack:
-        stdin_lines = get_stdin(waitable)
         files = [line_strip(
             stack.enter_context(open(path,'r')),
             line_sep
@@ -53,24 +64,26 @@ def permutations(*datas):
 def get_parser():
     parser = argparse.ArgumentParser(description="Cartesian Product")
     parser.add_argument(dest='paths',nargs='*',help='path of files',metavar='filepath')
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument(
-        "-v", "--version", action="store_true", help="Show the version of this program."
+    parser.add_argument(
+        "-v", "--version", action="store_true",required=False, help="Show the version of this program."
     )
-    group.add_argument(
-        "-t",dest='sep',default=EMPTY_STRING,metavar='CHARSET', help="use CHAR as output field separator"
+    parser.add_argument(
+        "-t",dest='sep',default=EMPTY_STRING,required=False,metavar='CHARSET', help="use CHAR as output field separator"
     )
-    group.add_argument(
-        "-l",dest='line',default=LINE_SEP,metavar='CHARSET', help="use CHAR as input file line separator"
+    parser.add_argument(
+        "-l",dest='line',default=LINE_SEP,metavar='CHARSET',required=False, help="use CHAR as input file line separator"
     )
-    group.add_argument(
-        "-r",dest='reverse',action='store_true', help="append stdin after paths"
+    parser.add_argument(
+        "-r","--reverse",action='store_true',required=False, help="append stdin after paths"
     )
-    group.add_argument(
-        "-w",dest='waitable',action='store_true', help="wait stdin input"
+    parser.add_argument(
+        "-w","--waitable",action='store_true',required=False, help="wait stdin input"
     )
-    group.add_argument(
-        "-a",dest='all',action='store_true', help="all possible orderings"
+    parser.add_argument(
+        "-a","--all",action='store_true',required=False,help="all possible orderings"
+    )
+    parser.add_argument(
+        "-b","--big",action='store_true',required=False,help="stdin input big data"
     )
     return parser
 
@@ -84,7 +97,7 @@ def main():
         version()
         return
     paths = args.paths
-    generate(*paths,all=args.all,waitable=args.waitable,reverse=args.reverse,sep=args.sep,line_sep=args.line)
+    generate(*paths,big=args.big,all=args.all,waitable=args.waitable,reverse=args.reverse,sep=args.sep,line_sep=args.line)
     
 if __name__ == "__main__":
     main()
