@@ -35,8 +35,8 @@ class TestCartesian(unittest.TestCase):
 
     unittest
     @patch('cartesian.print',return_value="no")
-    def test_product(self,mock_print):
-        cartesian.product(_TEST_FILE1,_TEST_FILE2)
+    def test_generate(self,mock_print):
+        cartesian.generate(_TEST_FILE1,_TEST_FILE2)
         self.assertEqual(
             len(_TEST_DATA1) * len(_TEST_DATA2),
             mock_print.call_count
