@@ -1,0 +1,11 @@
+*.pyc
+*.txt
+*.gz
+.coverage
+__pycache__
+
+# emacs temp
+*~
+*#
+*.#*
+
