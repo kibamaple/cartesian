@@ -13,38 +13,38 @@ __version__ = "0.0.0"
 EMPTY_STRING = ""
 LINE_SEP = '\n'
 
-def get_stdin():
-    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+def get_stdin(waitable):
+    if waitable or sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
         return sys.stdin.readlines()
 
 def line_strip(lines,sep):
     for line in lines:
         yield line.rstrip(sep)
 
-def generate(*paths,stdin=False,sep=EMPTY_STRING,line_sep=LINE_SEP,all=False):
+def generate(*paths,all=False,waitable=False,reverse=False,sep=EMPTY_STRING,line_sep=LINE_SEP):
     with contextlib.ExitStack() as stack:
-        stdin_lines = get_stdin()
+        stdin_lines = get_stdin(waitable)
         files = [line_strip(
             stack.enter_context(open(path,'r')),
             line_sep
         ) for path in paths]
         if stdin_lines:
             stdin_lines = line_strip(stdin_lines,line_sep)
-            if stdin:
-                files.insert(0,stdin_lines)
-            else:
+            if reverse:
                 files.append(stdin_lines)
+            else:
+                files.insert(0,stdin_lines)
         if all:
-           for contents in permutations(*files):
+            for contents in permutations(*files):
                 print(sep.join(contents))
-        else:
-            for contents in product(*files):
-                print(sep.join(contents))
+            return
+        for contents in product(*files):
+            print(sep.join(contents))
             
 def product(*datas):
     for contents in itertools.product(*datas):
         yield contents
-    
+
 def permutations(*datas):
     for contents in product(*datas):
         for content in itertools.permutations(contents):
@@ -64,10 +64,13 @@ def get_parser():
         "-l",dest='line',default=LINE_SEP,metavar='CHARSET', help="use CHAR as input file line separator"
     )
     group.add_argument(
-        "-s",dest='stdin',action='store_true', help="use stdin to first"
+        "-r",dest='reverse',action='store_true', help="append stdin after paths"
     )
     group.add_argument(
-        "-a",dest='all',action='store_true', help="show all possible orderings"
+        "-w",dest='waitable',action='store_true', help="wait stdin input"
+    )
+    group.add_argument(
+        "-a",dest='all',action='store_true', help="all possible orderings"
     )
     return parser
 
@@ -81,8 +84,7 @@ def main():
         version()
         return
     paths = args.paths
-    print(args)
-    generate(*paths,all=args.all,stdin=args.stdin,sep=args.sep,line_sep=args.line)
+    generate(*paths,all=args.all,waitable=args.waitable,reverse=args.reverse,sep=args.sep,line_sep=args.line)
     
 if __name__ == "__main__":
     main()
