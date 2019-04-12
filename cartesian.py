@@ -29,6 +29,7 @@ def line_strip(lines,sep):
         yield line.rstrip(sep)
 
 def generate(*paths,big=False,all=False,waitable=False,reverse=False,sep=EMPTY_STRING,line_sep=LINE_SEP):
+    stdin_lines = None
     if waitable or sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
         if big:
             stdin_lines = get_readline()
